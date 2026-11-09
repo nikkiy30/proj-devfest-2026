@@ -1,0 +1,16 @@
+# Firebase App Hosting の設定
+# https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  minInstances: 0 # アクセスがないときは0台にして料金を抑える
+  maxInstances: 2
+
+env:
+  - variable: GEMINI_MODEL
+    value: gemini-2.5-flash
+  # APIキーは Cloud Secret Manager に置き、ここでは名前だけ参照する
+  #   登録: firebase apphosting:secrets:set GEMINI_API_KEY
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+    availability:
+      - RUNTIME
