@@ -1,0 +1,48 @@
+# Build + smoke-test + store only. Deployment is a separate approved operation.
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --pull
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+      - .
+  - id: smoke-test
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -ceu
+      - |
+        trap 'docker rm -f okimochi-smoke >/dev/null 2>&1 || true' EXIT
+        docker run -d --name okimochi-smoke -e PORT=8080 \
+          ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+        ready=false
+        for attempt in {1..30}; do
+          if docker exec okimochi-smoke node -e 'fetch("http://127.0.0.1:8080/api/health").then(async r => { if (!r.ok || (await r.json()).status !== "ok") process.exit(1); }).catch(() => process.exit(1));'; then
+            ready=true
+            break
+          fi
+          sleep 1
+        done
+        if [ "$$ready" != true ]; then docker logs okimochi-smoke; exit 1; fi
+        test "$$(docker exec okimochi-smoke id -u)" != 0
+        docker exec okimochi-smoke node -e '
+          (async () => {
+            for (const [path, title] of [["/", "お気持ちAI"], ["/experiences/chinoke", "血の気が多い診断"]]) {
+              const r = await fetch("http://127.0.0.1:8080" + path);
+              if (!r.ok || !(await r.text()).includes(title)) throw new Error("Page failed: " + path);
+            }
+            const r = await fetch("http://127.0.0.1:8080/api/diagnose", {method: "POST"});
+            if (r.status !== 503 || (await r.json()).code !== "AI_DISABLED") throw new Error("AI must remain disabled");
+            console.log("Container smoke tests passed");
+          })().catch(e => {console.error(e); process.exit(1);});'
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+substitutions:
+  _REGION: asia-northeast1
+  _REPOSITORY: okimochi
+  _SERVICE: okimochi
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 900s

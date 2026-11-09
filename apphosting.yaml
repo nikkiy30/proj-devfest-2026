@@ -1,16 +1,7 @@
-# Firebase App Hosting の設定
-# https://firebase.google.com/docs/app-hosting/configure
-
+# Legacy Firebase App Hosting configuration.
+# The supported deployment target is now Cloud Run (see docs/cloud-run.md).
+# No API key is needed. Existing Firebase automatic deployments must be
+# disconnected in the Firebase console if migrating an active backend.
 runConfig:
-  minInstances: 0 # アクセスがないときは0台にして料金を抑える
+  minInstances: 0
   maxInstances: 2
-
-env:
-  - variable: GEMINI_MODEL
-    value: gemini-2.5-flash
-  # APIキーは Cloud Secret Manager に置き、ここでは名前だけ参照する
-  #   登録: firebase apphosting:secrets:set GEMINI_API_KEY
-  - variable: GEMINI_API_KEY
-    secret: GEMINI_API_KEY
-    availability:
-      - RUNTIME

@@ -1,0 +1,12 @@
+.git
+.gitignore
+.gcloudignore
+#!include:.gitignore
+node_modules/
+.next/
+.env*
+**/*.pem
+temp/
+tests/
+playwright-report/
+test-results/

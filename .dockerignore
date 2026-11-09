@@ -1,0 +1,12 @@
+# Explicit build inputs: local notes, keys and tests never enter the context.
+*
+!Dockerfile
+!.npmrc
+!package.json
+!package-lock.json
+!next.config.ts
+!tsconfig.json
+!src/
+!src/**
+!public/
+!public/**

@@ -1,69 +1,47 @@
-# 血の気が多い診断（DevFest 2026 Hackathon）
+# お気持ちAI（仮名）
 
-ムカついたことを書くと、Gemini が受け止めてユーモアで献血をすすめる Web アプリ。
+気持ちに合わせて体験を選ぶ Web アプリです。現在は「血の気が多い診断」を実装しています。ホームの UI と準備中のカードは暫定です。
 
-- フレームワーク: Next.js（App Router / TypeScript / Tailwind CSS）
-- AI: Gemini API（`@google/genai`）
-- 実行基盤: Firebase App Hosting（`main` に push すると自動デプロイ）
+## ローカル開発
 
-## セットアップ（3ステップ）
-
-必要なもの: **Node.js 22**（`node -v` で確認。nvm を使っている人は `nvm use` で揃う）
+必要なものは **Node.js 22** と npm です。Docker・GCP アカウント・API キーはローカル開発に不要です。
 
 ```bash
-git clone https://github.com/nikkiy30/proj-devfest-2026.git
-cd proj-devfest-2026
-npm install
-cp .env.example .env.local   # GEMINI_API_KEY を書き込む
-npm run dev                  # http://localhost:3000
+npm ci
+npm run dev
 ```
 
-Gemini API キーは [Google AI Studio](https://aistudio.google.com/apikey) で各自発行してください（無料枠あり）。
+- `/`：体験を選ぶホーム
+- `/experiences/chinoke`：10秒のマイク体験。タグ・任意入力から返答を選択
+- `/api/health`：起動確認
+- `POST /api/diagnose`：将来のサーバー接続用。現在は常に `503 / AI_DISABLED`。キーを設定しても有効になりません
 
-## よく使うコマンド
+## 体験の仕様
 
-| コマンド         | 内容                                            |
-| ---------------- | ----------------------------------------------- |
-| `npm run dev`    | 開発サーバーを起動                              |
-| `npm run check`  | lint・型チェック・フォーマット確認（CI と同じ） |
-| `npm run format` | コードを自動で整形                              |
-| `npm run build`  | 本番ビルド                                      |
+- 音声は録音・保存・文字起こし・送信しません。ブラウザの Web Audio API で音量だけを取得します。
+- マイクは HTTPS または localhost で利用できます。許可拒否・非対応の場合でもデモを試せます。
+- 10秒完了・途中終了・中止・画面の非表示・別ページへの移動でマイクを停止します。許可待ちを中止した後に許可されても、取得したマイクは停止します。
+- タグを選んだ場合はそのカテゴリを優先。「おまかせ」は任意入力のキーワード数で分類し、同点・該当なしなら汎用の返答です。音声の内容は判定しません。
+- 返答は仕事4件・恋愛4件・勉強5件・友人3件・汎用1件の計17件。各カテゴリ内で選択します。
+- 血の気レベルは音量に応じた遊びの演出で、医学的・心理学的な測定ではありません。大声を促すものではありません。デモの87%は固定サンプルです。
+- 入力と結果は画面内のメモリだけで扱い、再実行時に文章・結果を消去します。AI・解析サービス・永続ストレージは使用しません。
 
-VS Code を使う場合は、推奨拡張機能（ESLint / Prettier / Tailwind）を入れると保存時に自動整形されます。
+## 検証
 
-## 開発の流れ
-
-1. `main` から作業ブランチを切る（例: `feat/diagnose-prompt`）
-2. push して Pull Request を作る → GitHub Actions で `check` と `build` が走る
-3. レビュー後 `main` にマージ → Firebase App Hosting が自動でデプロイ
-
-## ディレクトリ構成
-
-```
-src/
-  app/
-    page.tsx              トップページ
-    diagnose-form.tsx     入力フォーム（ブラウザ側）
-    api/diagnose/route.ts 診断 API（サーバー側で Gemini を呼ぶ）
-  lib/
-    gemini.ts             Gemini クライアント（サーバー専用）
-apphosting.yaml           Firebase App Hosting の設定
+```bash
+npm run check       # lint・型・フォーマット
+npm run test:unit   # 返答分類・点数の検証
+npm run build       # 本番ビルド
+npx playwright install chromium  # 初回のみ。ブラウザの取得
+npm run test:e2e    # 本番サーバーでブラウザ検証（事前に build）
 ```
 
-API キーはサーバー側（`src/lib/gemini.ts`）でだけ読みます。`NEXT_PUBLIC_` を付けるとブラウザに漏れるので付けないでください。
+既存 Chromium を使う場合は `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chromium npm run test:e2e`。テストは疑似マイクを使います。実機のマイク許可、iOS Safari / Android Chrome での操作は公開前に別途確認してください。
 
-## デプロイ環境の初期設定（担当者が1回だけ）
+## Cloud Run への公開
 
-1. [Firebase コンソール](https://console.firebase.google.com/)でプロジェクトを作成し、**Blaze プラン**にする（App Hosting に必要）
-2. 「App Hosting」→「始める」で、この GitHub リポジトリと `main` ブランチを接続する
-3. Gemini API キーを Secret Manager に登録する
-   ```bash
-   npm install -g firebase-tools
-   firebase login
-   firebase apphosting:secrets:set GEMINI_API_KEY --project <プロジェクトID>
-   ```
-4. `main` に push すると自動でデプロイされる
+[Cloud Run 手順](docs/cloud-run.md)を参照してください。**設定ファイルの作成だけではビルド・公開されません。** `cloudbuild.yaml` はイメージの作成・コンテナ内の起動確認・Artifact Registry への保存までを行い、Cloud Run へのデプロイは分離しています。
 
-## 注意
+`temp/` はローカルの設計・レビュー・画像用で Git 管理外です。Docker と Cloud Build の送信対象からも除外しています。PR に共有する際は必要な図を画像として添付してください。
 
-この診断はジョークです。「献血で怒りが収まる」といった医学的な主張に見えないよう、プロンプトと画面の表現に気をつけてください。
+従来の `apphosting.yaml` は移行用に残しています。Cloud Run の設定には使われません。Firebase App Hosting の自動デプロイを既に設定している場合、main へのマージ前に Firebase コンソールで連携を確認・解除してください。このファイルの変更だけで既存の自動デプロイは停止しません。

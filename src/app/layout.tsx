@@ -1,29 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "血の気が多い診断",
-  description: "愚痴を書くと、Geminiが受け止めて献血をすすめるジョーク診断",
+  title: {
+    default: "お気持ちAI（仮名）｜気持ちに、ちいさな寄り道。",
+    template: "%s｜お気持ちAI（仮名）",
+  },
+  description: "いまの気持ちに合う体験を選んで、ひと息つこう。",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="ja"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html lang="ja">
+      <body>{children}</body>
     </html>
   );
 }
