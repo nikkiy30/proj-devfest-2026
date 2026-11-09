@@ -10,7 +10,10 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run typecheck && npm run format:check"
+    "check": "npm run lint && npm run typecheck && npm run format:check",
+    "start:standalone": "node scripts/prepare-standalone.mjs && node .next/standalone/server.js",
+    "test:e2e": "playwright test",
+    "test:unit": "node --experimental-strip-types tests/unit/chinoke.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.0.0",
@@ -20,6 +23,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

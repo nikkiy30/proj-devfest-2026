@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local design notes, diagrams and verification artifacts (never deploy)
+/temp/
+/test-results/
+/playwright-report/

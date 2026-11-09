@@ -1,3 +1,6 @@
 .next
 node_modules
 package-lock.json
+/temp/
+/test-results/
+/playwright-report/
