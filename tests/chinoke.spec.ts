@@ -124,11 +124,11 @@ test("optional text selects a local reply, stays out of requests and storage, an
     })),
   ).toEqual({ local: 0, session: 0 });
   await page.getByRole("button", { name: "もう一度、吐き出す" }).click();
+  await expect(start(page)).toBeFocused();
   await page.getByText("ひとことで書いてみる", { exact: false }).click();
   await expect(page.getByRole("textbox", { name: "いまの気持ち" })).toHaveValue(
     "",
   );
-  await expect(start(page)).toBeFocused();
 });
 
 test("permission denial explains recovery and keeps demo available", async ({
@@ -152,6 +152,8 @@ test("permission denial explains recovery and keeps demo available", async ({
 test("real Web Audio with a fake device completes in ten seconds and releases resources", async ({
   page,
 }) => {
+  // 実時間で10秒かかるため、並列実行時に既定の30秒を超えないよう延長する
+  test.slow();
   await instrumentMic(page);
   const requests: string[] = [];
   page.on("request", (request) => {
